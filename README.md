@@ -13,7 +13,7 @@ config :kafka_ex,
   brokers: [{"localhost", 9092}]
 ```
 
-Kafka_ex fails to start when kafka is not working. To disable this behaviour add
+Kafka_ex by default fails to start when kafka is not working. To disable this behaviour add
 ```elixir
 config :kafka_ex,
   disable_default_worker: true
