@@ -1,6 +1,7 @@
 # FranzTermStorage
 
 FranzTermStorage is a behaviour module that can cache all kafka data in named public ets.
+It is mostly suitable for kafka compacted topics.
 
 ## Using FranzTermStorage
 
