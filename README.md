@@ -31,7 +31,7 @@ iex(3)> :ets.tab2list(Test)
 []
 ```
 
-Ets `Test` will be populated with all data in kafka topic "topic_name". You can add data with
+Ets `Test` will be populated with all data in kafka topic `topic_name`. You can add data with
 ```
 sh-4.4$ bin/kafka-console-producer.sh --broker-list localhost:9092 --topic topic_name \
   --property "parse.key=true"  --property "key.separator=:"
@@ -58,7 +58,7 @@ def handle_messages(list) do
 end
 ```
 
-You can implement handle_sync to be notified when all current data has been read
+You can implement `handle_sync` to be notified when all current data has been read
 
 ```elixir
 def handle_sync() do
