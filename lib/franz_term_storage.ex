@@ -33,7 +33,7 @@ defmodule FranzTermStorage do
     state = %__MODULE__{
       topic: topic,
       name: name,
-      interval: Keyword.get(opts, :restart_interval, 1000)
+      interval: Keyword.get(opts, :reconnect_interval, 1000)
     }
 
     GenServer.start_link(__MODULE__, state)
