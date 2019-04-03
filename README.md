@@ -68,3 +68,7 @@ end
 ```
 
 FranzTermStorage will safety work with kafka downtime. Just retry to connect every second (by default)
+
+## Testing
+
+You can run kafka with `docker-compose up` for testing. When kafka has started just run `mix test`
