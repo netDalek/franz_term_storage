@@ -5,14 +5,34 @@ defmodule FranzTermStorage do
 
   alias FranzTermStorage.Consumer
 
-  @enforce_keys [:topic, :name, :fun, :interval]
-  defstruct [:topic, :ets, :pid, :fun, :name, :interval]
+  @callback handle_messages(List.t) :: :ok
+  @callback handle_sync() :: :ok
 
-  def start_link(name, topic, parse_fun, opts \\ []) do
+  @optional_callbacks handle_sync: 0, handle_messages: 1
+
+  @enforce_keys [:topic, :name, :interval]
+  defstruct [:topic, :ets, :pid, :name, :interval]
+
+  defmacro __using__(_opts) do
+    quote do
+      @behaviour FranzTermStorage
+
+      def handle_sync do
+        :ok
+      end
+
+      def handle_messages(list) do
+        list
+      end
+
+      defoverridable  handle_sync: 0, handle_messages: 1
+    end
+  end
+
+  def start_link(name, topic, opts \\ []) do
     state = %__MODULE__{
       topic: topic,
       name: name,
-      fun: parse_fun,
       interval: Keyword.get(opts, :restart_interval, 1000)
     }
 
@@ -29,7 +49,8 @@ defmodule FranzTermStorage do
 
   @impl true
   def handle_info(:start, state) do
-    case Consumer.start_link(state.topic, state.ets, state.fun) do
+    mod = state.name
+    case Consumer.start_link(state.topic, state.ets, mod) do
       {:ok, pid} ->
         Logger.debug("FranzTermStorage.Consumer started")
         {:noreply, %{state | pid: pid}}
