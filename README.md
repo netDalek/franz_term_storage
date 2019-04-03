@@ -7,19 +7,19 @@ FranzTermStorage is a behaviour module that can cache all kafka data in named pu
 Let's start with code example.
 
 FranzTermStorage depens on kafka_ex library. You should specify kafka address in config:
-```
+```elixir
 config :kafka_ex,
   brokers: [{"localhost", 9092}]
 ```
 
 Kafka_ex fails to start when kafka is not working. To disable this behaviour add
-```
+```elixir
 config :kafka_ex,
   disable_default_worker: true
 ```
 
 All callbacks are optional. So you can write just this:
-```
+```elixir
 iex(1)> defmodule Test do
 ...(1)>   use FranzTermStorage
 ...(1)> end
@@ -38,14 +38,14 @@ sh-4.4$ bin/kafka-console-producer.sh --broker-list localhost:9092 --topic topic
 >key:value
 ```
 
-```
+```elixir
 iex(4)> :ets.tab2list(Test)
 [{"key", "value"}]
 ```
 
 You can preprocess kafka messages before they will be inserted to ets. For example:
 
-```
+```elixir
 def handle_messages(list) do
   list
   |> Enum.map(fn {k, v} ->
@@ -60,7 +60,7 @@ end
 
 You can implement handle_sync to be notified when all current data has been read
 
-```
+```elixir
 def handle_sync() do
   Logger.info("topic_name topic has been read")
   Registry.register(Registry.UniqueRegisterTest, "topic_name", Test)
