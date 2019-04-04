@@ -7,7 +7,7 @@ defmodule FranzTermStorageTest do
   setup do
     Application.put_env(:franz_term_storage, :test_process, self())
 
-    {:ok, pid} = FranzTermStorage.Config.start_worker()
+    {:ok, pid} = FranzTermStorage.start_worker()
     [kafka: pid, topic: random_string(10)]
   end
 
