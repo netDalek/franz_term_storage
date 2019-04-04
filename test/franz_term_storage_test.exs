@@ -2,6 +2,8 @@ defmodule FranzTermStorageTest do
   use ExUnit.Case
   doctest FranzTermStorage
 
+  require Logger
+
   setup do
     Application.put_env(:franz_term_storage, :test_process, self())
 
@@ -30,8 +32,12 @@ defmodule FranzTermStorageTest do
     assert_receive :sync, 1000
     assert [{"key", "777"}] == :ets.tab2list(Test)
 
-    KafkaEx.produce(topic, 0, "999", worker_name: kafka, key: "key")
-    assert_receive :message, 1000
+    {time, _} = :timer.tc(fn ->
+      KafkaEx.produce(topic, 0, "999", worker_name: kafka, key: "key")
+      assert_receive :message, 1000
+    end)
+
+    Logger.info("kafka latency is #{time} microseconds")
     assert [{"key", "999"}] == :ets.tab2list(Test)
   end
 
