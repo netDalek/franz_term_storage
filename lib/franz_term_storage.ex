@@ -3,14 +3,9 @@ defmodule FranzTermStorage do
 
   require Logger
 
-  alias FranzTermStorage.Consumer
-
   alias KafkaEx.Protocol.Offset.Response, as: OffsetResponse
-  alias KafkaEx.Protocol.Fetch.Response, as: FetchResponse
-  alias KafkaEx.Protocol.Fetch.Message
-  alias FranzTermStorage.Config
 
-  @callback handle_messages(List.t) :: :ok
+  @callback handle_messages(List.t()) :: :ok
   @callback handle_sync() :: :ok
 
   @optional_callbacks handle_sync: 0, handle_messages: 1
@@ -30,7 +25,7 @@ defmodule FranzTermStorage do
         list
       end
 
-      defoverridable  handle_sync: 0, handle_messages: 1
+      defoverridable handle_sync: 0, handle_messages: 1
     end
   end
 
@@ -55,26 +50,32 @@ defmodule FranzTermStorage do
   @impl true
   def handle_info(:start, %{topic: topic} = state) do
     mod = state.name
-    {:ok, pid} = Task.start_link(fn ->
-      {:ok, worker} = start_worker
 
-      [%OffsetResponse{partition_offsets: [%{error_code: :no_error, offset: [earliest_offset]}]}] =
-        KafkaEx.earliest_offset(topic, 0, worker)
+    {:ok, pid} =
+      Task.start_link(fn ->
+        {:ok, worker} = start_worker()
 
-      [%OffsetResponse{partition_offsets: [%{error_code: :no_error, offset: [start_offset]}]}] =
-        KafkaEx.latest_offset(topic, 0, worker)
+        [
+          %OffsetResponse{
+            partition_offsets: [%{error_code: :no_error, offset: [earliest_offset]}]
+          }
+        ] = KafkaEx.earliest_offset(topic, 0, worker)
 
-      KafkaEx.stream(state.topic, 0, offset: earliest_offset, worker_name: worker)
-      |> Stream.map(fn(e) ->
-        objects = mod.handle_messages([{e.key, e.value}])
-        :ets.insert(state.ets, objects)
+        [%OffsetResponse{partition_offsets: [%{error_code: :no_error, offset: [start_offset]}]}] =
+          KafkaEx.latest_offset(topic, 0, worker)
 
-        if e.offset + 1 == start_offset do
-          mod.handle_sync()
-        end
+        KafkaEx.stream(state.topic, 0, offset: earliest_offset, worker_name: worker)
+        |> Stream.map(fn e ->
+          objects = mod.handle_messages([{e.key, e.value}])
+          :ets.insert(state.ets, objects)
+
+          if e.offset + 1 == start_offset do
+            mod.handle_sync()
+          end
+        end)
+        |> Enum.to_list()
       end)
-      |> Enum.to_list
-    end)
+
     {:noreply, %{state | pid: pid}}
   end
 
@@ -90,9 +91,11 @@ defmodule FranzTermStorage do
   end
 
   def start_worker do
-    opts = [uris: KafkaEx.Config.brokers(),
-      consumer_group: Application.get_env(:kafka_ex, :consumer_group, "kafka_ex")]
+    opts = [
+      uris: KafkaEx.Config.brokers(),
+      consumer_group: Application.get_env(:kafka_ex, :consumer_group, "kafka_ex")
+    ]
 
-    apply(KafkaEx.Config.server_impl, :start_link, [opts, :no_name])
+    apply(KafkaEx.Config.server_impl(), :start_link, [opts, :no_name])
   end
 end
