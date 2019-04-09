@@ -73,7 +73,7 @@ defmodule FranzTermStorage do
             mod.handle_sync()
           end
         end)
-        |> Enum.to_list()
+        |> Stream.run()
       end)
 
     {:noreply, %{state | pid: pid}}
